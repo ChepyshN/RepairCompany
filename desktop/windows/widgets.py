@@ -592,15 +592,9 @@ class WorksManagerWidget(QWidget):
 
         btn_layout = QHBoxLayout()
         self.add_btn = QPushButton("Добавить работу")
-        self.edit_btn = QPushButton("Редактировать выбранную")
-        self.del_btn = QPushButton("Удалить выбранную")
         btn_layout.addWidget(self.add_btn)
-        btn_layout.addWidget(self.edit_btn)
-        btn_layout.addWidget(self.del_btn)
         layout.addLayout(btn_layout)
 
-        self.add_btn.clicked.connect(self.add_work)
-        self.del_btn.clicked.connect(self.delete_work)
 
     def load_works(self):
         if not self.worker_id:
