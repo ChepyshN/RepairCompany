@@ -4,5 +4,5 @@ def validate_phone(phone: str) -> bool:
 def validate_email(email: str) -> bool:
     return "@" in email and "." in email
 
-def format_price(price: int) -> str:
-    return f"{price:,} ₽"
+def validate_password(password: str) -> bool:
+    return len(password) >= 4

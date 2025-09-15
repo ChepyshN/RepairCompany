@@ -47,20 +47,23 @@ def list_devices():
     return get_devices()
 
 # --- Orders ---
-def register_order(client_id, device_id, status, description=None):
+def register_order(client_id, device_id, status, worker_id, description=None):
     return add_order({
         "client_id": client_id,
         "device_id": device_id,
         "status": status,
-        "description": description
+        "description": description,
+        "worker_id": worker_id
     })
 
-def edit_order(order_id, client_id=None, device_id=None, status=None, description=None):
+def edit_order(order_id, worker_id=None, client_id=None, device_id=None, status=None, description=None):
     updated = {}
     if client_id is not None:
         updated["client_id"] = client_id
     if device_id is not None:
         updated["device_id"] = device_id
+    if worker_id is not None:
+        updated["worker_id"] = worker_id
     if status is not None:
         updated["status"] = status
     if description is not None:

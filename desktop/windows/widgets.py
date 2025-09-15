@@ -4,6 +4,7 @@ from app.business import list_devices, list_clients, list_orders, list_workers, 
     edit_client, register_device, edit_device, remove_device, remove_order, register_order, edit_order, \
     remove_work, register_work, get_my_client, get_my_worker
 from app.db import get_client_by_phone, get_worker_by_phone
+from app.helpers import validate_email
 
 
 class DevicesWidget(QWidget):
@@ -309,7 +310,10 @@ class ClientProfileWidget(QWidget):
     def save_profile(self):
         try:
             name = self.name_edit.text()
-            email = self.email_edit.text()
+            if validate_email(self.email_edit.text()): email = self.email_edit.text()
+            else:
+                QMessageBox.critical(self, "Ошибка", f"Неправильный формат email")
+                email = ""
 
             edit_client(self.client_phone, name, email)
             QMessageBox.information(self, "Успех", "Профиль обновлен")
@@ -446,19 +450,9 @@ class OrdersManagerWidget(QWidget):
         super().__init__()
         self.user = user
         self.init_ui()
-        self.resolve_worker_id()
-        self.load_orders()
-
-    def resolve_worker_id(self):
-        phone = self.user.get('phone')
-        if not phone:
-            QMessageBox.critical(self, "Ошибка", "Телефон пользователя не задан")
-            return
-        worker = get_my_worker(phone)
-        if not worker:
-            QMessageBox.critical(self, "Ошибка", "Сотрудник по телефону не найден")
-            return
+        worker = get_my_worker(self.user.get('phone'))
         self.worker_id = worker.get('id')
+        self.load_orders()
 
     def init_ui(self):
         layout = QVBoxLayout(self)
@@ -484,10 +478,7 @@ class OrdersManagerWidget(QWidget):
 
     def load_orders(self):
         orders = list_orders()
-        works = list_works()
-        worker = get_worker_by_phone(self.user.get('phone'))
-        relevant_order_ids = {w['order_id'] for w in works if w.get('worker_id') == worker.get('id')}
-        filtered_orders = [o for o in orders if o.get('id') in relevant_order_ids]
+        filtered_orders = [o for o in orders if o.get('worker_id') == self.worker_id]
 
         self.table.setRowCount(len(filtered_orders))
         for row, order in enumerate(filtered_orders):
@@ -508,28 +499,33 @@ class OrdersManagerWidget(QWidget):
         client_display = [f"{c['id']} - {c['phone']}" for c in clients]
         client_map = {client_display[i]: clients[i]['id'] for i in range(len(clients))}
 
-        devices = sorted(list_devices(), key=lambda x: x.get("name", ""))
-        device_display = [f"{d['id']} - {d['name']}" for d in devices]
-        device_map = {device_display[i]: devices[i]['id'] for i in range(len(devices))}
-
         client_item, ok = QInputDialog.getItem(self, "Новый заказ", "Выберите клиента:", client_display, editable=False)
         if not ok:
             return
+
+        selected_client_id = client_map[client_item]
+        devices = [d for d in list_devices() if d.get("client_id") == selected_client_id]
+        devices = sorted(devices, key=lambda x: x.get("name", ""))
+        device_display = [f"{d['id']} - {d['name']}" for d in devices]
+        device_map = {device_display[i]: devices[i]['id'] for i in range(len(devices))}
+
         device_item, ok = QInputDialog.getItem(self, "Новый заказ", "Выберите устройство:", device_display,
                                                editable=False)
         if not ok:
             return
+
         status, ok = QInputDialog.getText(self, "Новый заказ", "Статус:")
         if not ok or not status:
             return
+
         description, ok = QInputDialog.getMultiLineText(self, "Новый заказ", "Описание:")
         if not ok:
             description = ""
 
-        client_id = client_map[client_item]
+        client_id = selected_client_id
         device_id = device_map[device_item]
 
-        register_order(client_id, device_id, status, description)
+        register_order(client_id, device_id, status, self.worker_id, description)
         QMessageBox.information(self, "Успех", "Заказ добавлен")
         self.load_orders()
 
@@ -564,6 +560,7 @@ class OrdersManagerWidget(QWidget):
 class WorksManagerWidget(QWidget):
     def __init__(self, user):
         super().__init__()
+        self.add_btn = None
         self.user = user
         self.worker_id = None
         self.init_ui()
@@ -594,6 +591,7 @@ class WorksManagerWidget(QWidget):
         self.add_btn = QPushButton("Добавить работу")
         btn_layout.addWidget(self.add_btn)
         layout.addLayout(btn_layout)
+        self.add_btn.clicked.connect(self.add_work)
 
 
     def load_works(self):
@@ -621,6 +619,9 @@ class WorksManagerWidget(QWidget):
             QMessageBox.warning(self, "Ошибка", "Не найден ID сотрудника")
             return
         orders = list_orders()
+        if len(orders) == 0:
+            QMessageBox.warning(self, "Ошибка", "Нет заказов")
+            return
         clients = {c['id']: c for c in list_clients()}
         devices = {d['id']: d for d in list_devices()}
 

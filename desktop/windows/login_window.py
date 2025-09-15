@@ -5,6 +5,8 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt
 from app.business import register_user, get_user_by_phone
+from app.helpers import validate_password, validate_phone
+
 
 class LoginWindow(QWidget):
     def __init__(self, stacked_widget):
@@ -64,12 +66,18 @@ class LoginWindow(QWidget):
     def on_submit(self):
         mode = self.mode_selector.currentText()
         name = self.name_edit.text().strip()
-        phone = self.phone_edit.text().strip()
-        password = self.password_edit.text()
+        if validate_phone(self.phone_edit.text().strip()) : phone = self.phone_edit.text().strip()
+        else:
+            self.status_label.setText("Неправильный формат телефона")
+            phone = None
+        if validate_password(self.password_edit.text()) : password = self.password_edit.text()
+        else:
+            self.status_label.setText("Неправильный формат пароля (минимум 4 символа)")
+            password = None
         role = self.role_combo.currentText()
 
         if not phone or not password or (mode == "Регистрация" and not name):
-            self.status_label.setText("Заполните все обязательные поля.")
+            self.status_label.setText("Убедитесь, что формат телефона и пароля правильный (минимум 4 символа)")
             return
 
         password_hash = hashlib.sha256(password.encode()).hexdigest()
