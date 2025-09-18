@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QTableWidget, QTableWidgetItem, QMessageBox, QLineEdit, \
     QPushButton, QComboBox, QInputDialog, QHBoxLayout
 from app.business import list_devices, list_clients, list_orders, list_workers, list_works, list_specs, edit_worker, \
@@ -205,7 +207,7 @@ class WorksWidget(QWidget):
 
         for row, work in enumerate(works):
             table.setItem(row, 0, QTableWidgetItem(str(work.get("id", ""))))
-            table.setItem(row, 1, QTableWidgetItem(str(work.get("done_by", ""))))
+            table.setItem(row, 1, QTableWidgetItem(str(datetime.strptime(work.get("done_by", ""), "%Y-%m-%dT%H:%M:%S.%f%z").strftime("%Y-%m-%d %H:%M"))))
             table.setItem(row, 2, QTableWidgetItem(str(work.get("order_id", ""))))
             table.setItem(row, 3, QTableWidgetItem(str(work.get("worker_id", ""))))
             table.setItem(row, 4, QTableWidgetItem(str(work.get("price", ""))))
@@ -603,7 +605,7 @@ class WorksManagerWidget(QWidget):
         self.table.setRowCount(len(works))
         for row, w in enumerate(works):
             self.table.setItem(row, 0, QTableWidgetItem(str(w.get("id", ""))))
-            self.table.setItem(row, 1, QTableWidgetItem(str(w.get("done_by", ""))))
+            self.table.setItem(row, 1, QTableWidgetItem(str(datetime.strptime(w.get("done_by", ""), "%Y-%m-%dT%H:%M:%S.%f%z").strftime("%Y-%m-%d %H:%M"))))
             self.table.setItem(row, 2, QTableWidgetItem(str(w.get("order_id", ""))))
             self.table.setItem(row, 3, QTableWidgetItem(str(w.get("worker_id", ""))))
             self.table.setItem(row, 4, QTableWidgetItem(str(w.get("price", ""))))
